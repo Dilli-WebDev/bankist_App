@@ -16,7 +16,7 @@ html {
 }
 
 body {
-  font-family: "Poppins", sans-serif;
+  font-family: 'Poppins', sans-serif;
   color: #444;
   background-color: #f3f3f3;
   height: 100vh;
@@ -25,6 +25,7 @@ body {
 
 nav {
   display: flex;
+  /* flex-direction: column; */
   justify-content: space-between;
   align-items: center;
   padding: 0 2rem;
@@ -56,7 +57,6 @@ nav {
   border: 1px solid #fff;
   transition: all 0.3s;
 }
-
 .login__input:focus {
   outline: none;
   border: 1px solid #ccc;
@@ -77,12 +77,36 @@ nav {
 
 .login__btn:hover,
 .login__btn:focus,
+.logout_btn :hover,
+.logout_btn :focus,
 .btn--sort:hover,
 .btn--sort:focus {
   outline: none;
   color: #777;
 }
+.login__btn,
+.logout_btn {
+  border: none;
+  background: none;
+  font-size: 2.2rem;
+  color: inherit;
+  cursor: pointer;
+  transition: all 0.3s;
+}
 
+.logout_btn {
+  align-self: flex-start;
+  font-family: 'Poppins', sans-serif;
+  margin-right: 1.5rem;
+  font-size: 3rem;
+  opacity: 0;
+}
+
+.welcome,
+.login,
+.logo {
+  margin-bottom: 1.5rem;
+}
 /* MAIN */
 .app {
   position: relative;
