@@ -99,7 +99,7 @@ nav {
   font-family: 'Poppins', sans-serif;
   margin-right: 1.5rem;
   font-size: 3rem;
-  opacity: 0;
+  display: none;
 }
 
 .welcome,

@@ -106,13 +106,26 @@ const createUsernames = function (accounts) {
 };
 createUsernames(accounts);
 
+const resetUI = function () {
+  containerApp.style.opacity = 0;
+  btnLogout.style.display = 'none';
+  btnLogin.style.opacity = 100;
+};
+
+const updateUI = function (account) {
+  // Calling all three display Functions
+  displayMovements(account);
+  displayCurrentBalance(account);
+  displaySummary(account);
+};
+
 // To Display Transactions in Movements Div Container form Movements Array
-const displayMovements = function (movements) {
+const displayMovements = function (account) {
   // to clear html elements inside the movement container
   containerMovements.innerHTML = '';
 
   // Iterates for each element in Movements array
-  movements.forEach(function (mov, i) {
+  account.movements.forEach(function (mov, i) {
     // Conditional operator to check if deposit or withdrawal and stored in a Variable
     const type = mov > 0 ? 'deposit' : 'withdrawal';
     // html template literal sentence
@@ -128,11 +141,11 @@ const displayMovements = function (movements) {
 };
 
 // to display Current Balance of the account user using movements array
-const displayCurrentBalance = function (movements) {
+const displayCurrentBalance = function (account) {
   // console.log(movements);
   // reduce method has two paramters , accumlator and current element and will always return acc and then used for next ieration and intialization value should be given for accumlator
-  const balance = movements.reduce((acc, curr) => acc + curr, 0);
-  labelBalance.innerHTML = `&#8377 ${balance} `;
+  account.balance = account.movements.reduce((acc, curr) => acc + curr, 0);
+  labelBalance.innerHTML = `&#8377 ${account.balance} `;
 };
 
 //To display sum of Deposit , Withdrawal and Interest
@@ -162,9 +175,13 @@ const displaySummary = function (account) {
 ///////////////////////////////////////////
 ////////////////EVENT LISTENERS///////////
 //////////////////////////////////////////
+// deafult refers to account 1
+let currentUser = account1;
 
-let currentUser;
+// //////////////////////////////////////
+///////LOGIN BUTTON/////////////////////
 btnLogin.addEventListener('click', function (e) {
+  // without this , button element inside form Element will refresh the page
   e.preventDefault();
   // 1. First to get the Current User from accounts Array of Objects using Find Method by comparing account.username with Username input Value
   currentUser = accounts.find(
@@ -177,7 +194,7 @@ btnLogin.addEventListener('click', function (e) {
     // console.log('Login');
     // add opacity to Container App
     containerApp.style.opacity = 100;
-    btnLogout.style.opacity = 100;
+    btnLogout.style.display = 'block';
     btnLogin.style.opacity = 0;
     // Set valus of userName and Pin to Empty String and remove Focus using blur()
     inputLoginUsername.value = inputLoginPin.value = '';
@@ -186,16 +203,91 @@ btnLogin.addEventListener('click', function (e) {
     labelWelcome.textContent = ` Welcome Back , ${
       currentUser.owner.split(' ')[0]
     }`;
-    // Calling all three display Functions
-    displayMovements(currentUser.movements);
-    displayCurrentBalance(currentUser.movements);
-    displaySummary(currentUser);
+    //  update UI Function
+    updateUI(currentUser);
+  } else {
+    alert(`Enter Correct Username and Pin Please!`);
   }
 });
 
+////////////////////////////////////////
+///////LOGOUT BUTTON/////////////////////
 btnLogout.addEventListener('click', function (e) {
+  // e.preventDefault();
+  resetUI();
+});
+////////////////////////////////////////
+///////TRANSFER BUTTON/////////////////////
+btnTransfer.addEventListener('click', function (e) {
+  // without this , button element inside form Element will refresh the page
   e.preventDefault();
-  containerApp.style.opacity = 0;
-  btnLogout.style.opacity = 0;
-  btnLogin.style.opacity = 100;
+  // 1. First to get the Reciever User name  and amout from Transfer input Values and then using Find Method(compare account.username)
+  const recieverAcct = accounts.find(
+    acc => acc.username === inputTransferTo.value
+  );
+  // console.log(recieverAcct);
+  const transferAmount = Number(inputTransferAmount.value);
+
+  // Condition 1 whether transfer amount entered is positive and
+  // Condition 2 whether reciever account exists and
+  // Condition 3 Greater than Account balance and
+  // Condition 4 whether reciever account is not equal to current account
+  if (
+    transferAmount > 0 &&
+    recieverAcct &&
+    currentUser.balance >= transferAmount &&
+    recieverAcct.username !== currentUser.username
+  ) {
+    console.log('Transfer');
+    // Doing the transfer
+    currentUser.movements.push(-transferAmount);
+    recieverAcct.movements.push(transferAmount);
+    // Updating the Current UI
+    updateUI(currentUser);
+  }
+  // clear the input fields once button clicked
+  inputTransferTo.value = inputTransferAmount.value = '';
+});
+
+////////////////////////////////////////
+///////CLOSE ACCOUNT BUTTON/////////////////////
+btnLoan.addEventListener('click', function (e) {
+  e.preventDefault();
+  const loanAmount = Number(inputLoanAmount.value);
+  // deposits contains atleast 10% of requested loan amount in movements array of current user.
+  // using some method , even if any one value in array satisfies the condition return true
+  if (
+    loanAmount > 0 &&
+    currentUser.movements.some(deposit => deposit >= loanAmount * 0.1)
+  ) {
+    // push to currentUser Account Array
+    currentUser.movements.push(loanAmount);
+    // Update the UI once pushed
+    updateUI(currentUser);
+  }
+  inputLoanAmount.value = '';
+});
+
+////////////////////////////////////////
+///////CLOSE ACCOUNT BUTTON/////////////////////
+btnClose.addEventListener('click', function (e) {
+  e.preventDefault();
+  if (
+    currentUser.username === inputCloseUsername.value &&
+    currentUser.pin === Number(inputClosePin.value)
+  ) {
+    // Finding the index of currentUser in Accounts Array using findIndex Method
+    const indexofAccount = accounts.findIndex(
+      acc => acc.username === currentUser.username
+    );
+    console.log(indexofAccount);
+    // splice method deletes the value in that index with occurence 1
+    accounts.splice(indexofAccount, 1);
+    console.log(accounts);
+
+    // UI should Reset
+    resetUI();
+  }
+  // to clear the fields
+  inputCloseUsername.value = inputClosePin.value = '';
 });
