@@ -10,6 +10,18 @@ const account1 = {
   movements: [200, 450, -400, 3000, -650, -130, 70, 1300],
   interestRate: 1.2, // %
   pin: 1111,
+  movementsDates: [
+    '2019-11-18T21:31:17.178Z',
+    '2019-12-23T07:42:02.383Z',
+    '2020-01-28T09:15:04.904Z',
+    '2020-04-01T10:17:24.185Z',
+    '2020-05-08T14:11:59.604Z',
+    '2020-07-26T17:01:17.194Z',
+    '2020-07-28T23:36:17.929Z',
+    '2020-08-01T10:51:36.790Z',
+  ],
+  currency: 'EUR',
+  locale: 'pt-PT', // de-DE
 };
 
 const account2 = {
@@ -17,6 +29,18 @@ const account2 = {
   movements: [5000, 3400, -150, -790, -3210, -1000, 8500, -30],
   interestRate: 1.5,
   pin: 2222,
+  movementsDates: [
+    '2019-11-01T13:15:33.035Z',
+    '2019-11-30T09:48:16.867Z',
+    '2019-12-25T06:04:23.907Z',
+    '2020-01-25T14:18:46.235Z',
+    '2020-02-05T16:33:06.386Z',
+    '2020-04-10T14:43:26.374Z',
+    '2020-06-25T18:49:59.371Z',
+    '2020-07-26T12:01:20.894Z',
+  ],
+  currency: 'USD',
+  locale: 'en-US',
 };
 
 const account3 = {
@@ -110,6 +134,7 @@ const resetUI = function () {
   containerApp.style.opacity = 0;
   btnLogout.style.display = 'none';
   btnLogin.style.opacity = 100;
+  labelWelcome.textContent = `Log in to get started`;
 };
 
 const updateUI = function (account) {
@@ -120,19 +145,24 @@ const updateUI = function (account) {
 };
 
 // To Display Transactions in Movements Div Container form Movements Array
-const displayMovements = function (account) {
+// By default sort is false
+const displayMovements = function (account, sort = false) {
   // to clear html elements inside the movement container
   containerMovements.innerHTML = '';
 
+  // need to check is sorted is true , if true assign sorted shallow copy of array to new variable else default account.movements array should be assigned
+  // Ascending order sort((a,b)=> a-b)
+  const movs = sort
+    ? account.movements.slice().sort((a, b) => a - b)
+    : account.movements;
+  console.log(movs);
   // Iterates for each element in Movements array
-  account.movements.forEach(function (mov, i) {
+  movs.forEach(function (mov, i) {
     // Conditional operator to check if deposit or withdrawal and stored in a Variable
     const type = mov > 0 ? 'deposit' : 'withdrawal';
     // html template literal sentence
     const html = `<div class="movements__row">
-    <div class="movements__type movements__type--${type}">${
-      i + 1
-    } ${type}t</div>
+    <div class="movements__type movements__type--${type}">${i + 1} ${type}</div>
     <div class="movements__value">${mov} &#8377</div>
   </div>`;
     // insertAdjacentHTML will insert each html element after beggining of containerMovements(Movements Div container)
@@ -171,6 +201,9 @@ const displaySummary = function (account) {
   labelSumOut.innerHTML = `&#8377 ${expense} `;
   labelSumInterest.innerHTML = `&#8377 ${interest} `;
 };
+
+///////////////////////////////////////////////////////////////////////
+////////////////FUNCTIONS for NUMBERS , DATES & TIMERS/////////////////
 
 ///////////////////////////////////////////
 ////////////////EVENT LISTENERS///////////
@@ -291,3 +324,17 @@ btnClose.addEventListener('click', function (e) {
   // to clear the fields
   inputCloseUsername.value = inputClosePin.value = '';
 });
+
+////////////////////////////////////////
+///////SORT BUTTON/////////////////////
+// Creating a global state varibale for sorted
+let sorted = false;
+btnSort.addEventListener('click', function (e) {
+  // initally sorted will be false and upon clikcing below function will run and sent argument as !sorted that is not false = true
+  displayMovements(currentUser, !sorted);
+  // immeidately sorted is to set true and next time called sorted will flip to false
+  sorted = !sorted;
+});
+
+///////////////////////////////////////////////////////////////////////
+////////////////EVENT LISTENERS for NUMBERS , DATES & TIMERS/////////////////
