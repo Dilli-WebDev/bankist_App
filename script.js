@@ -16,12 +16,12 @@ const account1 = {
     '2020-01-28T09:15:04.904Z',
     '2020-04-01T10:17:24.185Z',
     '2020-05-08T14:11:59.604Z',
-    '2020-07-26T17:01:17.194Z',
-    '2020-07-28T23:36:17.929Z',
-    '2020-08-01T10:51:36.790Z',
+    '2024-05-18T17:01:17.194Z',
+    '2024-05-22T23:36:17.929Z',
+    '2024-05-23T10:51:36.790Z',
   ],
-  currency: 'EUR',
-  locale: 'pt-PT', // de-DE
+  currency: 'INR',
+  locale: 'en-GB', // de-DE
 };
 
 const account2 = {
@@ -40,7 +40,7 @@ const account2 = {
     '2020-07-26T12:01:20.894Z',
   ],
   currency: 'USD',
-  locale: 'en-US',
+  locale: 'ta-IN',
 };
 
 const account3 = {
@@ -57,6 +57,7 @@ const account4 = {
   pin: 4444,
 };
 
+console.log(navigator.language);
 // Array of Objects
 const accounts = [account1, account2, account3, account4];
 
@@ -144,6 +145,33 @@ const updateUI = function (account) {
   displaySummary(account);
 };
 
+///////////////////////////////////////////////////////////////////////
+////////////////FUNCTIONS for NUMBERS , DATES & TIMERS/////////////////
+
+const formatDate = function (date, locale) {
+  // to convert milliseconds to seconds then minutes to hours to day
+  const calcDatePassed = (date1, date2) =>
+    Math.round(Math.abs((date2 - date1) / (1000 * 60 * 60 * 24)));
+
+  const daysPassed = calcDatePassed(new Date(), date);
+
+  if (daysPassed === 0) return `Today`;
+  if (daysPassed === 1) return `yesterday`;
+  if (daysPassed <= 7) return `${daysPassed} Days ago`;
+  // const day = ` ${date.getDate()}`.padStart(2, 0);
+  // const month = `${date.getMonth() + 1}`.padStart(2, 0);
+  // const year = date.getFullYear();
+  return new Intl.DateTimeFormat(locale).format(date);
+};
+
+// Format Curreny
+const formatCurr = function (value, locale, curr) {
+  return new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency: curr,
+  }).format(value);
+};
+
 // To Display Transactions in Movements Div Container form Movements Array
 // By default sort is false
 const displayMovements = function (account, sort = false) {
@@ -155,15 +183,22 @@ const displayMovements = function (account, sort = false) {
   const movs = sort
     ? account.movements.slice().sort((a, b) => a - b)
     : account.movements;
-  console.log(movs);
+  ///////////////////////////////////////////////////////////
   // Iterates for each element in Movements array
   movs.forEach(function (mov, i) {
     // Conditional operator to check if deposit or withdrawal and stored in a Variable
     const type = mov > 0 ? 'deposit' : 'withdrawal';
+    // Inside second loop for movements Date Array
+    //Standard form of Date property is '2019-11-30T09:48:16.867Z',
+    const date = new Date(account.movementsDates[i]);
+    // PAssing in locale argument for Internalization API
+    const displayDate = formatDate(date, account.locale);
+    const displayCurrency = formatCurr(mov, account.locale, account.currency);
     // html template literal sentence
     const html = `<div class="movements__row">
     <div class="movements__type movements__type--${type}">${i + 1} ${type}</div>
-    <div class="movements__value">${mov} &#8377</div>
+    <div class="movements__date">${displayDate}</div>
+    <div class="movements__value">${displayCurrency}</div>
   </div>`;
     // insertAdjacentHTML will insert each html element after beggining of containerMovements(Movements Div container)
     containerMovements.insertAdjacentHTML('afterbegin', html);
@@ -175,7 +210,12 @@ const displayCurrentBalance = function (account) {
   // console.log(movements);
   // reduce method has two paramters , accumlator and current element and will always return acc and then used for next ieration and intialization value should be given for accumlator
   account.balance = account.movements.reduce((acc, curr) => acc + curr, 0);
-  labelBalance.innerHTML = `&#8377 ${account.balance} `;
+  const displayCurrency = formatCurr(
+    account.balance,
+    account.locale,
+    account.currency
+  );
+  labelBalance.textContent = `${displayCurrency} `;
 };
 
 //To display sum of Deposit , Withdrawal and Interest
@@ -197,19 +237,51 @@ const displaySummary = function (account) {
     .filter(int => int > 1)
     .reduce((acc, curr) => acc + curr, 0);
 
-  labelSumIn.innerHTML = `&#8377 ${income} `;
-  labelSumOut.innerHTML = `&#8377 ${expense} `;
-  labelSumInterest.innerHTML = `&#8377 ${interest} `;
+  labelSumIn.textContent = formatCurr(income, account.locale, account.currency);
+  labelSumOut.textContent = formatCurr(
+    expense,
+    account.locale,
+    account.currency
+  );
+  labelSumInterest.textContent = formatCurr(
+    interest,
+    account.locale,
+    account.currency
+  );
 };
-
-///////////////////////////////////////////////////////////////////////
-////////////////FUNCTIONS for NUMBERS , DATES & TIMERS/////////////////
 
 ///////////////////////////////////////////
 ////////////////EVENT LISTENERS///////////
 //////////////////////////////////////////
+
 // deafult refers to account 1
-let currentUser = account1;
+let currentUser, timer;
+
+// StartLogout Timer
+const startLogoutTimer = function () {
+  // initailize time = 180 seconds
+  let time = 180;
+  // writing seperate callBack function to call inside setInterval
+  const tick = function () {
+    // min gets quotient - 180 / 60 is 3 with Math.trunc value and then coverted to string to use padstart with length and adds 0 at start
+    const min = String(Math.trunc(time / 60)).padStart(2, 0);
+    // sec gets remainder -//180 % 60 is 0  then coverted to string to use padstart with length and adds 0 at start
+    const sec = String(time % 60).padStart(2, 0);
+    // both min and sec value displayed in labeltimer HTML element
+    labelTimer.textContent = `${min}:${sec}`;
+    // if condition to check if time === 0 then clearInterval and reset UI
+    if (time === 0) {
+      clearInterval(timer);
+      resetUI();
+    }
+    // time decrease every 1 sec
+    time--;
+  };
+  // first Invoked Function
+  tick();
+  // return this setInterval function which runs evry 1 sec
+  return setInterval(tick, 1000);
+};
 
 // //////////////////////////////////////
 ///////LOGIN BUTTON/////////////////////
@@ -220,7 +292,37 @@ btnLogin.addEventListener('click', function (e) {
   currentUser = accounts.find(
     account => account.username === inputLoginUsername.value
   );
-  console.log(currentUser);
+  // console.log(currentUser);
+
+  // startLogoutTimer function
+  // first time logged in timer doesn not have any value , but second time , timer - setinterval function it does satisfy if condition and clearinterval and then again timer will get assigned and calls startLogoutTimer
+  if (timer) clearInterval(timer);
+  timer = startLogoutTimer();
+  console.log(timer);
+  //////////////////////////////////////////////////////////
+  // day/month/year
+  // const day = ` ${now.getDate()}`.padStart(2, 0);
+  // const month = `${now.getMonth() + 1}`.padStart(2, 0);
+  // const year = now.getFullYear();
+  // const hours = `${now.getHours() + 1}`.padStart(2, 0);
+  // const minutes = `${now.getMinutes() + 1}`.padStart(2, 0);
+
+  // Internationalizing Date API
+  const now = new Date();
+  const options = {
+    hour: 'numeric',
+    minute: 'numeric',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    // weekday: 'long',
+    // const locale = navigator.language;
+    //console.log(locale);
+  };
+  labelDate.textContent = new Intl.DateTimeFormat(
+    currentUser.locale,
+    options
+  ).format(now);
 
   // 2.Now that we have a Currentuser , we have to check whether first Current user Exists and then the pin of Current user
   if (currentUser?.pin === Number(inputLoginPin.value)) {
@@ -271,32 +373,45 @@ btnTransfer.addEventListener('click', function (e) {
     currentUser.balance >= transferAmount &&
     recieverAcct.username !== currentUser.username
   ) {
-    console.log('Transfer');
+    // console.log('Transfer');
     // Doing the transfer
     currentUser.movements.push(-transferAmount);
     recieverAcct.movements.push(transferAmount);
+    // Pushing Movements Dates with new Date() into CurrentUser movementsDates Array
+    currentUser.movementsDates.push(new Date().toISOString());
+    recieverAcct.movementsDates.push(new Date().toISOString());
     // Updating the Current UI
     updateUI(currentUser);
+    //Clear timer
+    clearInterval(timer);
+    timer = startLogoutTimer();
   }
   // clear the input fields once button clicked
   inputTransferTo.value = inputTransferAmount.value = '';
 });
 
 ////////////////////////////////////////
-///////CLOSE ACCOUNT BUTTON/////////////////////
+///////REQUEST LOAN BUTTON/////////////////////
 btnLoan.addEventListener('click', function (e) {
   e.preventDefault();
-  const loanAmount = Number(inputLoanAmount.value);
+  const loanAmount = Math.floor(inputLoanAmount.value);
   // deposits contains atleast 10% of requested loan amount in movements array of current user.
   // using some method , even if any one value in array satisfies the condition return true
   if (
     loanAmount > 0 &&
     currentUser.movements.some(deposit => deposit >= loanAmount * 0.1)
   ) {
-    // push to currentUser Account Array
-    currentUser.movements.push(loanAmount);
-    // Update the UI once pushed
-    updateUI(currentUser);
+    // setTimeout for 5 secs
+    setTimeout(function () {
+      // push to currentUser Account Array
+      currentUser.movements.push(loanAmount);
+      currentUser.movementsDates.push(new Date().toISOString());
+
+      // Update the UI once pushed
+      updateUI(currentUser);
+    }, 2000);
+    clearInterval(timer);
+    timer = startLogoutTimer();
   }
   inputLoanAmount.value = '';
 });
